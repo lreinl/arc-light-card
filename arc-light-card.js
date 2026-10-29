@@ -12,7 +12,7 @@
 // "+ Speichern" legt eine neue Szene "<Name> · <Szene>" an. Das Zahnrad oeffnet die Einstellungen
 // (Szenen-Leiste ein/aus, Szenen sortieren per Griff, umbenennen, ueberschreiben, loeschen; Auto-Aus-Dauer).
 // Alle Eingaben laufen in der Kachel selbst (keine Browser-Dialoge, die in Apps oft blockiert sind).
-const ARC_VERSION = "1.0.0";
+const ARC_VERSION = "1.0.1";
 const ARC_HUE_END = 320;
 const ARC_WHITE_STOPS = [[255, 147, 44], [255, 190, 120], [255, 236, 214], [232, 240, 255], [181, 210, 255]];
 const ARC_AUTO_ALIAS = "licht | auto-aus";
@@ -249,7 +249,13 @@ class ArcLightCard extends HTMLElement {
       if (e.key === "Escape") this._closeNameBar();
     });
     const bar = $(".bar");
-    bar.addEventListener("input", () => { $(".pct").textContent = bar.value + " %"; this._barTouched = true; });
+    bar.addEventListener("input", () => {
+      cancelAnimationFrame(this._barAnim);
+      this._barShown = Number(bar.value);
+      this._barTarget = undefined;
+      $(".pct").textContent = bar.value + " %";
+      this._barTouched = true;
+    });
     bar.addEventListener("change", () => {
       this._barTouched = false;
       this._call("turn_on", { brightness_pct: Number(bar.value) });
@@ -697,16 +703,35 @@ class ArcLightCard extends HTMLElement {
     if (on) pwr.style.setProperty("--c", cur);
 
     const bar = $(".bar");
-    if (!this._barTouched) {
-      bar.value = bri || 1;
-      $(".pct").textContent = bri + " %";
-    }
+    if (!this._barTouched) this._glideBar(bri);
     bar.style.background = `linear-gradient(90deg, #2c2c2e, ${cur})`;
     bar.classList.toggle("off", !on);
 
     $(".scenebox").classList.toggle("hidden", !this._showScenes() && !this._nameOpen);
     this._renderAuto();
     this._renderChips(scenes, activeId);
+  }
+
+  // Helligkeitsregler und Prozentwert gleiten zum neuen Wert, im selben Takt wie der Ein/Aus-Schein.
+  _glideBar(target) {
+    const bar = this._$(".bar");
+    const pct = this._$(".pct");
+    const show = (v) => { bar.value = Math.max(1, v); pct.textContent = Math.round(v) + " %"; };
+    if (this._barTarget === target) return;
+    this._barTarget = target;
+    cancelAnimationFrame(this._barAnim);
+    const from = this._barShown;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (from === undefined || reduce || !this.isConnected) { this._barShown = target; show(target); return; }
+    const t0 = performance.now(), dur = 400;
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      this._barShown = from + (target - from) * e;
+      show(this._barShown);
+      if (p < 1) this._barAnim = requestAnimationFrame(step);
+    };
+    this._barAnim = requestAnimationFrame(step);
   }
 
   _renderChips(scenes, activeId) {
