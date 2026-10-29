@@ -1,0 +1,70 @@
+:root {
+  --bg: #111113;
+  --panel: #1c1c1e;
+  --line: #2e2e31;
+  --text: #ececec;
+  --muted: #9a9aa0;
+  --accent: #ff9f0a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+header, main { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 40px; padding-bottom: 8px; }
+h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.01em; }
+header p { color: var(--muted); max-width: 680px; margin: 0 0 12px; }
+.links { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.links a { color: var(--accent); text-decoration: none; }
+.links a:hover { text-decoration: underline; }
+.ver { color: var(--muted); font-size: 13px; }
+
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  padding-top: 16px;
+  padding-bottom: 48px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+aside h2 { font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+aside h2 + .hint { margin-top: 0; }
+aside h2:not(:first-child) { margin-top: 24px; }
+.hint { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+
+.ext { display: flex; flex-wrap: wrap; gap: 8px; }
+.ext button {
+  font: inherit; font-size: 13px; color: var(--text);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 14px; cursor: pointer;
+}
+.ext button:hover { border-color: #48484c; }
+.ext button.quiet { color: var(--muted); }
+
+.log {
+  list-style: none; margin: 0; padding: 0;
+  font-size: 12px; max-height: 420px; overflow: auto;
+  border-top: 1px solid var(--line);
+}
+.log li { padding: 6px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.log b { font-weight: 600; }
+.log code { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.log:empty::before { content: "Noch nichts – bedien eine Karte."; color: var(--muted); display: block; padding: 6px 0; }
+
+@media (max-width: 820px) {
+  main { grid-template-columns: 1fr; }
+}

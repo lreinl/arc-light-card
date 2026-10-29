@@ -1,0 +1,6 @@
+{
+  "name": "Farbbogen-Licht (arc-light-card)",
+  "filename": "arc-light-card.js",
+  "render_readme": true,
+  "homeassistant": "2024.8.0"
+}

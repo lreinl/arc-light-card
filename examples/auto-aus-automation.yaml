@@ -1,0 +1,39 @@
+# Automation für die Auto-Aus-Taste der Karte.
+# Einfügen unter Einstellungen → Automationen → Neue Automation → ⋮ → In YAML bearbeiten.
+# Der Name muss genau "licht | auto-aus" lauten, damit "Auto-Aus einrichten" im Zahnrad-Menü
+# neue Lichter selbst in den Auslöser "licht_aus" eintragen kann.
+#
+# Pro Licht gehört ein Timer timer.auto_aus_<object_id> dazu (z. B. timer.auto_aus_flur_lampen
+# für light.flur_lampen). Die Karte legt ihn über "Auto-Aus einrichten" selbst an.
+alias: "licht | auto-aus"
+description: "Schaltet Lichter aus, wenn ihr Auto-Aus-Timer abläuft, und bricht den Timer ab, wenn das Licht vorher ausgeht."
+mode: parallel
+triggers:
+  - trigger: event
+    event_type: timer.finished
+    id: abgelaufen
+  - trigger: state
+    entity_id:
+      - light.dein_licht  # wird von der Karte ergänzt
+    to: "off"
+    id: licht_aus
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: abgelaufen
+          - condition: template
+            value_template: "{{ trigger.event.data.entity_id.startswith('timer.auto_aus_') }}"
+        sequence:
+          - action: light.turn_off
+            target:
+              entity_id: "{{ 'light.' ~ trigger.event.data.entity_id[15:] }}"
+      - conditions:
+          - condition: trigger
+            id: licht_aus
+          - condition: template
+            value_template: "{{ is_state('timer.auto_aus_' ~ trigger.to_state.object_id, 'active') }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: "{{ 'timer.auto_aus_' ~ trigger.to_state.object_id }}"

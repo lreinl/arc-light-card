@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Farbbogen-Licht</title>
+  <meta name="description" content="Testseite der Home-Assistant-Karte arc-light-card: Farbe, Weiß, Helligkeit, Auto-Aus und Szenen.">
+  <link rel="stylesheet" href="demo/demo.css">
+</head>
+<body>
+  <header>
+    <h1>Farbbogen-Licht</h1>
+    <p>Lovelace-Karte für Home Assistant: Farbe oder Weiß im Halbkreis, Ein/Aus in der Mitte, Helligkeit,
+      Auto-Aus und echte Home-Assistant-Szenen. Hier läuft sie gegen ein simuliertes Home Assistant –
+      alles, was du einstellst, bleibt in diesem Browser.</p>
+    <p class="links">
+      <a href="https://github.com/lreinl/arc-light-card">GitHub</a>
+      <a href="https://github.com/lreinl/arc-light-card#installation">Installation</a>
+      <span class="ver" id="ver"></span>
+    </p>
+  </header>
+
+  <main>
+    <section class="cards">
+      <arc-light-card id="c1"></arc-light-card>
+      <arc-light-card id="c2"></arc-light-card>
+    </section>
+
+    <aside>
+      <h2>Von außen schalten</h2>
+      <p class="hint">So, als würde jemand den Wandschalter oder eine Automation benutzen.</p>
+      <div class="ext">
+        <button data-l="light.flur_lampen" data-s="toggle">Flur an/aus</button>
+        <button data-l="light.nanoleaf" data-s="toggle">Nanoleaf an/aus</button>
+        <button data-l="light.flur_lampen" data-s="warm">Flur warmweiß 40 %</button>
+        <button id="reset" class="quiet">Demo zurücksetzen</button>
+      </div>
+
+      <h2>Was die Karte an Home Assistant schickt</h2>
+      <ol id="log" class="log"></ol>
+    </aside>
+  </main>
+
+  <script type="module">
+    import { MockHass } from "./demo/mock-hass.js";
+    import "./arc-light-card.js?v=1";
+
+    const log = document.getElementById("log");
+    const mock = new MockHass({
+      onCall(what, data) {
+        const li = document.createElement("li");
+        const d = { ...data }; delete d.type;
+        li.innerHTML = `<b></b> <code></code>`;
+        li.querySelector("b").textContent = what;
+        li.querySelector("code").textContent = Object.keys(d).length ? JSON.stringify(d) : "";
+        log.prepend(li);
+        while (log.children.length > 30) log.lastChild.remove();
+      },
+    });
+
+    const c1 = document.getElementById("c1");
+    const c2 = document.getElementById("c2");
+    c1.setConfig({ type: "custom:arc-light-card", entity: "light.flur_lampen", name: "Flur" });
+    c2.setConfig({ type: "custom:arc-light-card", entity: "light.nanoleaf", name: "Nanoleaf" });
+    mock.subscribe((h) => { c1.hass = h; c2.hass = h; });
+
+    document.querySelectorAll(".ext [data-l]").forEach((b) => b.addEventListener("click", () => {
+      const id = b.dataset.l;
+      if (b.dataset.s === "warm") mock.callService("light", "turn_on", { entity_id: id, color_temp_kelvin: 2700, brightness_pct: 40 });
+      else mock.callService("light", "toggle", { entity_id: id });
+    }));
+    document.getElementById("reset").addEventListener("click", () => { mock.reset(); log.replaceChildren(); });
+
+    fetch("arc-light-card.js", { cache: "no-store" }).then((r) => r.text()).then((t) => {
+      const m = t.match(/ARC_VERSION = "([^"]+)"/);
+      if (m) document.getElementById("ver").textContent = "Version " + m[1];
+    }).catch(() => {});
+  </script>
+</body>
+</html>

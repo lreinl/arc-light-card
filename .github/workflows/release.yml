@@ -1,0 +1,27 @@
+name: Release
+
+# Ein Tag wie v1.2.0 erzeugt ein GitHub-Release mit arc-light-card.js.
+# HACS zeigt das Release in Home Assistant als Update an.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Version in der Datei muss zum Tag passen
+        run: |
+          file_ver=$(grep -oE 'ARC_VERSION = "[^"]+"' arc-light-card.js | cut -d'"' -f2)
+          if [ "v$file_ver" != "$GITHUB_REF_NAME" ]; then
+            echo "ARC_VERSION ist $file_ver, Tag ist $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" arc-light-card.js --title "$GITHUB_REF_NAME" --generate-notes
